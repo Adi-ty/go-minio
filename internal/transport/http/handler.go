@@ -23,6 +23,7 @@ type MinioService interface {
 	GetFile(ctx context.Context, bucketName, objectName, filePath string) error
 	DeleteObject(ctx context.Context, bucketName, objectName string) error
 	CheckObject(ctx context.Context, bucketName, objectName string) (bool, error)
+	RenameObject(ctx context.Context, bucketName, oldObjectName, newObjectName string) error
 }
 
 type UploadRequest struct {
@@ -44,6 +45,12 @@ type DeleteObjectRequest struct {
 type CheckObjectRequest struct {
 	BucketName string `json:"bucket_name"`
     ObjectName string `json:"object_name"`
+}
+
+type RenameObjectRequest struct {
+    BucketName    string `json:"bucket_name"`
+    OldObjectName string `json:"old_object_name"`
+    NewObjectName string `json:"new_object_name"`
 }
 
 type Response struct {
@@ -81,6 +88,7 @@ func (h *Handler) mapRoutes() {
 	h.Router.HandleFunc("/api/v1/get", h.GetFile).Methods("POST")
 	h.Router.HandleFunc("/api/v1/delete", h.DeleteObject).Methods("POST")
 	h.Router.HandleFunc("/api/v1/check", h.CheckObject).Methods("POST")
+	h.Router.HandleFunc("/api/v1/rename", h.RenameObject).Methods("POST")
 }
 
 func (h *Handler) Serve() error {
@@ -169,6 +177,25 @@ func (h *Handler) CheckObject(w http.ResponseWriter, r *http.Request) {
     }
 
     resp := CheckObjectResponse{Exists: exists}
+    if err := json.NewEncoder(w).Encode(resp); err != nil {
+        http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+    }
+}
+
+func (h *Handler) RenameObject(w http.ResponseWriter, r *http.Request) {
+	var req RenameObjectRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid request payload", http.StatusBadRequest)
+        return
+    }
+
+	err := h.MinioService.RenameObject(r.Context(), req.BucketName, req.OldObjectName, req.NewObjectName)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+	resp := map[string]string{"message": "File renamed successfully"}
     if err := json.NewEncoder(w).Encode(resp); err != nil {
         http.Error(w, "Failed to encode response", http.StatusInternalServerError)
     }
