@@ -20,11 +20,22 @@ type Handler struct {
 
 type MinioService interface {
 	UploadFile(ctx context.Context, bucketName, filePath string) (string, error)
+	GetFile(ctx context.Context, bucketName, objectName, filePath string) error
 }
 
 type UploadRequest struct {
 	BucketName string `json:"bucket_name"`
 	FilePath   string `json:"file_path"`
+}
+
+type GetFileRequest struct {
+	BucketName string `json:"bucket_name"`
+	ObjectName string `json:"object_name"`
+	FilePath   string `json:"file_path"`
+}
+
+type Response struct {
+    Message string `json:"message"`
 }
 
 func NewHandler(minioService MinioService) *Handler {
@@ -51,6 +62,7 @@ func (h *Handler) mapRoutes() {
 	})
 
 	h.Router.HandleFunc("/api/v1/upload", h.UploadFile).Methods("POST")
+	h.Router.HandleFunc("/api/v1/get", h.GetFile).Methods("POST")
 }
 
 func (h *Handler) Serve() error {
@@ -85,8 +97,25 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := map[string]string{"file_name": fileName}
+	resp := map[string]string{"message": "file uploaded successfully", "file_name": fileName}
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, "failed to encode response", http.StatusInternalServerError)
 	}
+}
+
+func (h *Handler) GetFile(w http.ResponseWriter, r *http.Request) {
+    var req GetFileRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid request body", http.StatusBadRequest)
+        return
+    }
+
+    err := h.MinioService.GetFile(r.Context(), req.BucketName, req.ObjectName, req.FilePath)
+    if err != nil {
+        http.Error(w, "Failed to get file", http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(Response{Message: "File downloaded successfully"})
 }

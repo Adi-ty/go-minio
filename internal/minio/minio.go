@@ -3,6 +3,7 @@ package minio
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -55,4 +56,23 @@ func (s *Service) UploadFile(ctx context.Context, bucketName, filePath string) (
 	}
 
 	return objectName, nil
+}
+
+func (s *Service) GetFile(ctx context.Context, bucketName, objectName, filePath string) error {
+	localFile, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+
+	obj, err := s.MinioClient.GetObject(ctx, bucketName, objectName, minio.GetObjectOptions{})
+    if err != nil {
+        return err
+    }
+	defer obj.Close()
+
+	if _, err := io.Copy(localFile, obj); err != nil {
+		return err
+	}
+
+	return nil
 }
