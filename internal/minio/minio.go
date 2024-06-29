@@ -85,3 +85,20 @@ func (s *Service) DeleteObject(ctx context.Context, bucketName, objectName strin
 
 	return nil
 }
+
+func (s *Service) CheckObject(ctx context.Context, bucketName, objectName string) (bool, error) {
+	_, err := s.MinioClient.StatObject(ctx, bucketName, objectName, minio.StatObjectOptions{})
+	if err != nil {
+		// if minio.ToErrorResponse(err).Code == "The specified key does not exist." {
+        //     return false, nil
+        // }
+        // return false, err
+		if err.Error() == "The specified key does not exist." {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
+}

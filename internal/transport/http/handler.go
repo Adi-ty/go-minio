@@ -22,6 +22,7 @@ type MinioService interface {
 	UploadFile(ctx context.Context, bucketName, filePath string) (string, error)
 	GetFile(ctx context.Context, bucketName, objectName, filePath string) error
 	DeleteObject(ctx context.Context, bucketName, objectName string) error
+	CheckObject(ctx context.Context, bucketName, objectName string) (bool, error)
 }
 
 type UploadRequest struct {
@@ -40,8 +41,17 @@ type DeleteObjectRequest struct {
     ObjectName string `json:"object_name"`
 }
 
+type CheckObjectRequest struct {
+	BucketName string `json:"bucket_name"`
+    ObjectName string `json:"object_name"`
+}
+
 type Response struct {
     Message string `json:"message"`
+}
+
+type CheckObjectResponse struct {
+    Exists bool `json:"exists"`
 }
 
 func NewHandler(minioService MinioService) *Handler {
@@ -70,6 +80,7 @@ func (h *Handler) mapRoutes() {
 	h.Router.HandleFunc("/api/v1/upload", h.UploadFile).Methods("POST")
 	h.Router.HandleFunc("/api/v1/get", h.GetFile).Methods("POST")
 	h.Router.HandleFunc("/api/v1/delete", h.DeleteObject).Methods("POST")
+	h.Router.HandleFunc("/api/v1/check", h.CheckObject).Methods("POST")
 }
 
 func (h *Handler) Serve() error {
@@ -142,4 +153,23 @@ func (h *Handler) DeleteObject(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(Response{Message: "Object deleted successfully"})
+}
+
+func (h *Handler) CheckObject(w http.ResponseWriter, r *http.Request) {
+    var req CheckObjectRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid request payload", http.StatusBadRequest)
+        return
+    }
+
+    exists, err := h.MinioService.CheckObject(r.Context(), req.BucketName, req.ObjectName)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    resp := CheckObjectResponse{Exists: exists}
+    if err := json.NewEncoder(w).Encode(resp); err != nil {
+        http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+    }
 }
