@@ -76,3 +76,12 @@ func (s *Service) GetFile(ctx context.Context, bucketName, objectName, filePath 
 
 	return nil
 }
+
+func (s *Service) DeleteObject(ctx context.Context, bucketName, objectName string) error {
+	err := s.MinioClient.RemoveObject(ctx, bucketName, objectName, minio.RemoveObjectOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

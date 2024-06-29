@@ -21,6 +21,7 @@ type Handler struct {
 type MinioService interface {
 	UploadFile(ctx context.Context, bucketName, filePath string) (string, error)
 	GetFile(ctx context.Context, bucketName, objectName, filePath string) error
+	DeleteObject(ctx context.Context, bucketName, objectName string) error
 }
 
 type UploadRequest struct {
@@ -32,6 +33,11 @@ type GetFileRequest struct {
 	BucketName string `json:"bucket_name"`
 	ObjectName string `json:"object_name"`
 	FilePath   string `json:"file_path"`
+}
+
+type DeleteObjectRequest struct {
+    BucketName string `json:"bucket_name"`
+    ObjectName string `json:"object_name"`
 }
 
 type Response struct {
@@ -63,6 +69,7 @@ func (h *Handler) mapRoutes() {
 
 	h.Router.HandleFunc("/api/v1/upload", h.UploadFile).Methods("POST")
 	h.Router.HandleFunc("/api/v1/get", h.GetFile).Methods("POST")
+	h.Router.HandleFunc("/api/v1/delete", h.DeleteObject).Methods("POST")
 }
 
 func (h *Handler) Serve() error {
@@ -118,4 +125,21 @@ func (h *Handler) GetFile(w http.ResponseWriter, r *http.Request) {
 
     w.WriteHeader(http.StatusOK)
     json.NewEncoder(w).Encode(Response{Message: "File downloaded successfully"})
+}
+
+func (h *Handler) DeleteObject(w http.ResponseWriter, r *http.Request) {
+	var req DeleteObjectRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err := h.MinioService.DeleteObject(r.Context(), req.BucketName, req.ObjectName)
+	if err != nil {
+		http.Error(w, "Failed to delete object", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(Response{Message: "Object deleted successfully"})
 }
