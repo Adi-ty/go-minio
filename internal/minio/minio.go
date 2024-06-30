@@ -121,3 +121,32 @@ func (s *Service) RenameObject(ctx context.Context, bucketName, oldObjectName, n
 
     return nil
 }
+
+func (s *Service) DeleteMultipleObjects(ctx context.Context, bucketName string, objectNames []string) error {
+	objectsCh := make(chan string)
+
+	go func() {
+		defer close(objectsCh)
+		for _, objectName := range objectNames {
+			objectsCh <- objectName
+		}
+	}()
+
+	removeObjectsOptions := minio.RemoveObjectsOptions{}
+	// Convert objectsCh to <-chan minio.ObjectInfo
+	objectInfoCh := make(chan minio.ObjectInfo)
+	go func() {
+		defer close(objectInfoCh)
+		for objectName := range objectsCh {
+			objectInfoCh <- minio.ObjectInfo{Key: objectName}
+		}
+	}()
+
+	for rErr := range s.MinioClient.RemoveObjects(ctx, bucketName, objectInfoCh, removeObjectsOptions) {
+		if rErr.Err != nil {
+			return rErr.Err
+		}
+	}
+
+	return nil
+}

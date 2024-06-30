@@ -24,7 +24,7 @@ type MinioService interface {
 	DeleteObject(ctx context.Context, bucketName, objectName string) error
 	CheckObject(ctx context.Context, bucketName, objectName string) (bool, error)
 	RenameObject(ctx context.Context, bucketName, oldObjectName, newObjectName string) error
-
+    DeleteMultipleObjects(ctx context.Context, bucketName string, objectNames []string) error
 }
 
 type UploadRequest struct {
@@ -62,6 +62,11 @@ type UploadFilesRequest struct {
 type GetFilesRequest struct {
 	BucketName string `json:"bucket_name"`
 	FilePaths map[string]string `json:"file_paths"` // key: object name, value: file path
+}
+
+type DeleteMultipleObjects struct {
+    BucketName string `json:"bucket_name"`
+    ObjectNames []string `json:"object_names"`
 }
 
 type Response struct {
@@ -102,6 +107,7 @@ func (h *Handler) mapRoutes() {
 	h.Router.HandleFunc("/api/v1/rename", h.RenameObject).Methods("POST")
 	h.Router.HandleFunc("/api/v1/upload/multiple", h.UploadMultipleFiles).Methods("POST")
 	h.Router.HandleFunc("/api/v1/get/multiple", h.GetMultipleFiles).Methods("POST")
+    h.Router.HandleFunc("/api/v1/delete/multiple", h.DeleteMultipleFiles).Methods("POST")
 }
 
 func (h *Handler) Serve() error {
@@ -276,4 +282,22 @@ func (h *Handler) GetMultipleFiles(w http.ResponseWriter, r *http.Request) {
     if err := json.NewEncoder(w).Encode(resp); err != nil {
         http.Error(w, "Failed to encode response", http.StatusInternalServerError)
     }
+}
+
+func (h *Handler) DeleteMultipleFiles(w http.ResponseWriter, r *http.Request) {
+	var req DeleteMultipleObjects
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.MinioService.DeleteMultipleObjects(r.Context(), req.BucketName, req.ObjectNames); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := map[string]string{"message": "files deleted successfully"}
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+	}
 }
