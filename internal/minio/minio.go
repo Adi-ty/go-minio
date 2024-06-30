@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/joho/godotenv"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
@@ -17,9 +18,14 @@ type Service struct {
 }
 
 func NewService() *Service {
-	endpoint := "localhost:9000"
-	accessKeyID := "user"
-	secretAccessKey := "secret-key"
+	err := godotenv.Load();
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	endpoint := os.Getenv("MINIO_ENDPOINT")
+	accessKeyID := os.Getenv("MINIO_USER")
+	secretAccessKey := os.Getenv("MINIO_PASSWORD")
 	useSSL := false
 
 	minioClient, err := minio.New(endpoint, &minio.Options{

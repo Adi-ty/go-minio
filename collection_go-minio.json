@@ -1,0 +1,147 @@
+{
+    "clientName": "Thunder Client",
+    "collectionName": "go-minio",
+    "collectionId": "95361e32-5ce4-49a2-be72-0b54167f5786",
+    "dateExported": "2024-06-30T19:05:25.342Z",
+    "version": "1.2",
+    "folders": [],
+    "requests": [
+        {
+            "_id": "3af52cfc-3b8f-4fd5-9500-59717ba1045b",
+            "colId": "95361e32-5ce4-49a2-be72-0b54167f5786",
+            "containerId": "",
+            "name": "Get Object",
+            "url": "http://localhost:8080/api/v1/get",
+            "method": "POST",
+            "sortNum": 10000,
+            "created": "2024-06-30T19:01:21.033Z",
+            "modified": "2024-06-30T19:01:21.033Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"bucket_name\": \"carplbucket\",\n  \"object_name\": \"hello.txt\",\n  \"file_path\": \"./hello.txt\"\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "b1289738-7ecf-48dd-9f23-3d29704f7639",
+            "colId": "95361e32-5ce4-49a2-be72-0b54167f5786",
+            "containerId": "",
+            "name": "Remove Object",
+            "url": "http://localhost:8080/api/v1/delete",
+            "method": "POST",
+            "sortNum": 20000,
+            "created": "2024-06-30T19:01:29.757Z",
+            "modified": "2024-06-30T19:01:29.757Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"object_name\": \"hello.txt\",\n  \"bucket_name\": \"carplbucket\"\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "2ff3e735-6425-4f93-a0d6-bfedddc61163",
+            "colId": "95361e32-5ce4-49a2-be72-0b54167f5786",
+            "containerId": "",
+            "name": "Put Object",
+            "url": "http://localhost:8080/api/v1/upload",
+            "method": "POST",
+            "sortNum": 30000,
+            "created": "2024-06-30T19:01:43.876Z",
+            "modified": "2024-06-30T19:01:43.876Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"bucket_name\": \"carplbucket\",\n  \"file_path\": \"./hi.txt\"\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "435b2f9d-3897-4a54-9172-bd0b6d184edb",
+            "colId": "95361e32-5ce4-49a2-be72-0b54167f5786",
+            "containerId": "",
+            "name": "Rename Object",
+            "url": "http://localhost:8080/api/v1/rename",
+            "method": "POST",
+            "sortNum": 40000,
+            "created": "2024-06-30T19:01:51.981Z",
+            "modified": "2024-06-30T19:01:51.981Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"bucket_name\": \"carplbucket\",\n  \"old_object_name\": \"hello.txt\",\n  \"new_object_name\": \"text.txt\"\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "eca4c78b-b6d1-484f-bb32-58c9fa511a82",
+            "colId": "95361e32-5ce4-49a2-be72-0b54167f5786",
+            "containerId": "",
+            "name": "Check Object Exists",
+            "url": "http://localhost:8080/api/v1/check",
+            "method": "POST",
+            "sortNum": 50000,
+            "created": "2024-06-30T19:02:00.845Z",
+            "modified": "2024-06-30T19:02:00.845Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"object_name\": \"abc.txt\",\n  \"bucket_name\": \"carplbucket\"\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "fcac9b77-c7a5-43b6-af91-8bde920b0c36",
+            "colId": "95361e32-5ce4-49a2-be72-0b54167f5786",
+            "containerId": "",
+            "name": "Put Objects",
+            "url": "http://localhost:8080/api/v1/upload/multiple",
+            "method": "POST",
+            "sortNum": 60000,
+            "created": "2024-06-30T19:02:10.887Z",
+            "modified": "2024-06-30T19:02:10.887Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"bucket_name\": \"carplbucket\",\n  \"file_paths\": [\n    \"./abc.txt\",\n    \"./index.html\"\n  ]\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "743b4303-e0a8-40c1-a774-a016cdac28ce",
+            "colId": "95361e32-5ce4-49a2-be72-0b54167f5786",
+            "containerId": "",
+            "name": "Get Objects",
+            "url": "http://localhost:8080/api/v1/get/multiple",
+            "method": "POST",
+            "sortNum": 70000,
+            "created": "2024-06-30T19:02:19.462Z",
+            "modified": "2024-06-30T19:02:19.462Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"bucket_name\": \"carplbucket\",\n  \"file_paths\": {\n    \"abc.txt\": \"./abc.txt\",\n    \"index.html\": \"./index.html\"\n  }\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "ea13d82e-4010-4996-87f8-13397b1a4048",
+            "colId": "95361e32-5ce4-49a2-be72-0b54167f5786",
+            "containerId": "",
+            "name": "Remove Objects",
+            "url": "http://localhost:8080/api/v1/delete/multiple",
+            "method": "POST",
+            "sortNum": 80000,
+            "created": "2024-06-30T19:02:26.084Z",
+            "modified": "2024-06-30T19:02:26.084Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"bucket_name\": \"carplbucket\",\n  \"object_names\": [\n    \"abc.txt\",\n    \"index.html\"\n  ]\n}",
+                "form": []
+            }
+        }
+    ],
+    "ref": "YdJGPg3TMwG2htbcpCarmxHTEE3ArSrj_667Nnmssn2IVs3lMlqEMJ_Ieo74U0WBDhozW7rGpQ6uh0ampElQTw"
+}
