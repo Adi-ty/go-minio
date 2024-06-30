@@ -59,6 +59,11 @@ type UploadFilesRequest struct {
 	FilePaths []string `json:"file_paths"`
 }
 
+type GetFilesRequest struct {
+	BucketName string `json:"bucket_name"`
+	FilePaths map[string]string `json:"file_paths"` // key: object name, value: file path
+}
+
 type Response struct {
     Message string `json:"message"`
 }
@@ -96,6 +101,7 @@ func (h *Handler) mapRoutes() {
 	h.Router.HandleFunc("/api/v1/check", h.CheckObject).Methods("POST")
 	h.Router.HandleFunc("/api/v1/rename", h.RenameObject).Methods("POST")
 	h.Router.HandleFunc("/api/v1/upload/multiple", h.UploadMultipleFiles).Methods("POST")
+	h.Router.HandleFunc("/api/v1/get/multiple", h.GetMultipleFiles).Methods("POST")
 }
 
 func (h *Handler) Serve() error {
@@ -235,6 +241,38 @@ func (h *Handler) UploadMultipleFiles(w http.ResponseWriter, r *http.Request) {
     }
 
     resp := map[string]string{"message": "All files uploaded successfully"}
+    if err := json.NewEncoder(w).Encode(resp); err != nil {
+        http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+    }
+}
+
+func (h *Handler) GetMultipleFiles(w http.ResponseWriter, r *http.Request) {
+    var req GetFilesRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid request payload", http.StatusBadRequest)
+        return
+    }
+
+    var failedFiles []string
+    for objectName, localFilePath := range req.FilePaths {
+        if err := h.MinioService.GetFile(r.Context(), req.BucketName, objectName, localFilePath); err != nil {
+            failedFiles = append(failedFiles, objectName)
+        }
+    }
+
+    if len(failedFiles) > 0 {
+        resp := map[string]interface{}{
+            "message":      "Some files failed to download",
+            "failed_files": failedFiles,
+        }
+        w.WriteHeader(http.StatusPartialContent)
+        if err := json.NewEncoder(w).Encode(resp); err != nil {
+            http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+        }
+        return
+    }
+
+    resp := map[string]string{"message": "All files downloaded successfully"}
     if err := json.NewEncoder(w).Encode(resp); err != nil {
         http.Error(w, "Failed to encode response", http.StatusInternalServerError)
     }
