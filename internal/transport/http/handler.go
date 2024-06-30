@@ -24,6 +24,7 @@ type MinioService interface {
 	DeleteObject(ctx context.Context, bucketName, objectName string) error
 	CheckObject(ctx context.Context, bucketName, objectName string) (bool, error)
 	RenameObject(ctx context.Context, bucketName, oldObjectName, newObjectName string) error
+
 }
 
 type UploadRequest struct {
@@ -51,6 +52,11 @@ type RenameObjectRequest struct {
     BucketName    string `json:"bucket_name"`
     OldObjectName string `json:"old_object_name"`
     NewObjectName string `json:"new_object_name"`
+}
+
+type UploadFilesRequest struct {
+	BucketName string `json:"bucket_name"`
+	FilePaths []string `json:"file_paths"`
 }
 
 type Response struct {
@@ -89,6 +95,7 @@ func (h *Handler) mapRoutes() {
 	h.Router.HandleFunc("/api/v1/delete", h.DeleteObject).Methods("POST")
 	h.Router.HandleFunc("/api/v1/check", h.CheckObject).Methods("POST")
 	h.Router.HandleFunc("/api/v1/rename", h.RenameObject).Methods("POST")
+	h.Router.HandleFunc("/api/v1/upload/multiple", h.UploadMultipleFiles).Methods("POST")
 }
 
 func (h *Handler) Serve() error {
@@ -196,6 +203,38 @@ func (h *Handler) RenameObject(w http.ResponseWriter, r *http.Request) {
     }
 
 	resp := map[string]string{"message": "File renamed successfully"}
+    if err := json.NewEncoder(w).Encode(resp); err != nil {
+        http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+    }
+}
+
+func (h *Handler) UploadMultipleFiles(w http.ResponseWriter, r *http.Request) {
+    var req UploadFilesRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid request payload", http.StatusBadRequest)
+        return
+    }
+
+    var failedFiles []string
+    for _, filePath := range req.FilePaths {
+        if _, err := h.MinioService.UploadFile(r.Context(), req.BucketName, filePath); err != nil {
+            failedFiles = append(failedFiles, filePath)
+        }
+    }
+
+    if len(failedFiles) > 0 {
+        resp := map[string]interface{}{
+            "message":      "Some files failed to upload",
+            "failed_files": failedFiles,
+        }
+        w.WriteHeader(http.StatusPartialContent)
+        if err := json.NewEncoder(w).Encode(resp); err != nil {
+            http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+        }
+        return
+    }
+
+    resp := map[string]string{"message": "All files uploaded successfully"}
     if err := json.NewEncoder(w).Encode(resp); err != nil {
         http.Error(w, "Failed to encode response", http.StatusInternalServerError)
     }
