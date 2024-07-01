@@ -6,7 +6,7 @@ services:
     container_name: minio
     restart: always
     entrypoint: sh
-    command: -c 'mkdir -p /data/carplbucket && minio server /data'
+    command: -c 'mkdir -p /data/carplbucket && minio server --console-address ":9001" /data'
     ports:
       - 9000:9000
       - 9001:9001

@@ -2,6 +2,7 @@ package minio
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -17,6 +18,17 @@ type Service struct {
 	MinioClients map[string]*minio.Client
 }
 
+type MinioBucket struct {
+	Name            string `json:"name"`
+	AccessKeyID     string `json:"accessKeyID"`
+	SecretAccessKey string `json:"secretAccessKey"`
+}
+
+type Config struct {
+	Endpoint string        `json:"endpoint"`
+	Buckets  []MinioBucket `json:"buckets"`
+}
+
 func NewService() *Service {
 	err := godotenv.Load()
 	if err != nil {
@@ -24,23 +36,29 @@ func NewService() *Service {
 	}
 
 	minioClients := make(map[string]*minio.Client)
-	buckets := []string{"BUCKET1", "BUCKET2"} // Add more bucket identifiers as needed
 
-	for _, bucket := range buckets {
-		name := os.Getenv(fmt.Sprintf("MINIO_%s_NAME", bucket))
-		endpoint := os.Getenv("MINIO_ENDPOINT") // Assuming the endpoint is the same for all buckets
-		accessKeyID := os.Getenv(fmt.Sprintf("MINIO_%s_ACCESS_KEY", bucket))
-		secretAccessKey := os.Getenv(fmt.Sprintf("MINIO_%s_SECRET_KEY", bucket))
+	configJSON := os.Getenv("CREDENTIALS")
+	if configJSON == "" {
+		log.Fatalf("Credentials is not set in .env")
+	}
+
+	var config Config
+	err = json.Unmarshal([]byte(configJSON), &config)
+	if err != nil {
+		log.Fatalf("Failed to parse credentials")
+	}
+
+	for _, bucket := range config.Buckets {
 		useSSL := false
 
-		client, err := minio.New(endpoint, &minio.Options{
-			Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+		client, err := minio.New(config.Endpoint, &minio.Options{
+			Creds:  credentials.NewStaticV4(bucket.AccessKeyID, bucket.SecretAccessKey, ""),
 			Secure: useSSL,
 		})
 		if err != nil {
-			log.Fatalf("Failed to initialize MinIO client for bucket %s: %v", name, err)
+			log.Fatalf("Failed to initialize MinIO client for bucket %s: %v", bucket.Name, err)
 		}
-		minioClients[name] = client
+		minioClients[bucket.Name] = client
 	}
 
 	return &Service{
