@@ -14,34 +14,54 @@ import (
 )
 
 type Service struct {
-	MinioClient *minio.Client
+	MinioClients map[string]*minio.Client
 }
 
 func NewService() *Service {
-	err := godotenv.Load();
+	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error loading .env file")
 	}
 
-	endpoint := os.Getenv("MINIO_ENDPOINT")
-	accessKeyID := os.Getenv("MINIO_USER")
-	secretAccessKey := os.Getenv("MINIO_PASSWORD")
-	useSSL := false
+	minioClients := make(map[string]*minio.Client)
+	buckets := []string{"BUCKET1", "BUCKET2"} // Add more bucket identifiers as needed
 
-	minioClient, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-		Secure: useSSL,
-	})
-	if err != nil {
-		log.Fatalf("Failed to initialize MinIO client: %v", err)
+	for _, bucket := range buckets {
+		name := os.Getenv(fmt.Sprintf("MINIO_%s_NAME", bucket))
+		endpoint := os.Getenv("MINIO_ENDPOINT") // Assuming the endpoint is the same for all buckets
+		accessKeyID := os.Getenv(fmt.Sprintf("MINIO_%s_ACCESS_KEY", bucket))
+		secretAccessKey := os.Getenv(fmt.Sprintf("MINIO_%s_SECRET_KEY", bucket))
+		useSSL := false
+
+		client, err := minio.New(endpoint, &minio.Options{
+			Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+			Secure: useSSL,
+		})
+		if err != nil {
+			log.Fatalf("Failed to initialize MinIO client for bucket %s: %v", name, err)
+		}
+		minioClients[name] = client
 	}
 
 	return &Service{
-		MinioClient: minioClient,
+		MinioClients: minioClients,
 	}
 }
 
+func (s *Service) getClient(bucketName string) (*minio.Client, error) {
+	client, exists := s.MinioClients[bucketName]
+	if !exists {
+		return nil, fmt.Errorf("no client found for bucket %s", bucketName)
+	}
+	return client, nil
+}
+
 func (s *Service) UploadFile(ctx context.Context, bucketName, filePath string) (string, error) {
+	client, err := s.getClient(bucketName)
+	if err != nil {
+		return "", err
+	}
+
 	file, err := os.Open(filePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to open file: %w", err)
@@ -56,7 +76,7 @@ func (s *Service) UploadFile(ctx context.Context, bucketName, filePath string) (
 		return "", fmt.Errorf("failed to get file info: %w", err)
 	}
 
-	_, err = s.MinioClient.PutObject(context.Background(), bucketName, objectName, file, fileStat.Size(), minio.PutObjectOptions{ContentType: contentType})
+	_, err = client.PutObject(context.Background(), bucketName, objectName, file, fileStat.Size(), minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
 		return "", fmt.Errorf("failed to upload file: %w", err)
 	}
@@ -65,15 +85,20 @@ func (s *Service) UploadFile(ctx context.Context, bucketName, filePath string) (
 }
 
 func (s *Service) GetFile(ctx context.Context, bucketName, objectName, filePath string) error {
+	client, err := s.getClient(bucketName)
+	if err != nil {
+		return err
+	}
+
 	localFile, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
 
-	obj, err := s.MinioClient.GetObject(ctx, bucketName, objectName, minio.GetObjectOptions{})
-    if err != nil {
-        return err
-    }
+	obj, err := client.GetObject(ctx, bucketName, objectName, minio.GetObjectOptions{})
+	if err != nil {
+		return err
+	}
 	defer obj.Close()
 
 	if _, err := io.Copy(localFile, obj); err != nil {
@@ -84,7 +109,12 @@ func (s *Service) GetFile(ctx context.Context, bucketName, objectName, filePath 
 }
 
 func (s *Service) DeleteObject(ctx context.Context, bucketName, objectName string) error {
-	err := s.MinioClient.RemoveObject(ctx, bucketName, objectName, minio.RemoveObjectOptions{})
+	client, err := s.getClient(bucketName)
+	if err != nil {
+		return err
+	}
+
+	err = client.RemoveObject(ctx, bucketName, objectName, minio.RemoveObjectOptions{})
 	if err != nil {
 		return err
 	}
@@ -93,7 +123,12 @@ func (s *Service) DeleteObject(ctx context.Context, bucketName, objectName strin
 }
 
 func (s *Service) CheckObject(ctx context.Context, bucketName, objectName string) (bool, error) {
-	_, err := s.MinioClient.StatObject(ctx, bucketName, objectName, minio.StatObjectOptions{})
+	client, err := s.getClient(bucketName)
+	if err != nil {
+		return false, err
+	}
+
+	_, err = client.StatObject(ctx, bucketName, objectName, minio.StatObjectOptions{})
 	if err != nil {
 		if err.Error() == "The specified key does not exist." {
 			return false, nil
@@ -106,29 +141,39 @@ func (s *Service) CheckObject(ctx context.Context, bucketName, objectName string
 }
 
 func (s *Service) RenameObject(ctx context.Context, bucketName, oldObjectName, newObjectName string) error {
+	client, err := s.getClient(bucketName)
+	if err != nil {
+		return err
+	}
+
 	src := minio.CopySrcOptions{
 		Bucket: bucketName,
-        Object: oldObjectName,
+		Object: oldObjectName,
 	}
 	dst := minio.CopyDestOptions{
-        Bucket: bucketName,
-        Object: newObjectName,
-    }
+		Bucket: bucketName,
+		Object: newObjectName,
+	}
 
-	_, err := s.MinioClient.CopyObject(ctx, dst, src)
-    if err != nil {
-        return err
-    }
+	_, err = client.CopyObject(ctx, dst, src)
+	if err != nil {
+		return err
+	}
 
-	err = s.MinioClient.RemoveObject(ctx, bucketName, oldObjectName, minio.RemoveObjectOptions{})
-    if err != nil {
-        return err
-    }
+	err = client.RemoveObject(ctx, bucketName, oldObjectName, minio.RemoveObjectOptions{})
+	if err != nil {
+		return err
+	}
 
-    return nil
+	return nil
 }
 
 func (s *Service) DeleteMultipleObjects(ctx context.Context, bucketName string, objectNames []string) error {
+	client, err := s.getClient(bucketName)
+	if err != nil {
+		return err
+	}
+
 	objectsCh := make(chan string)
 
 	go func() {
@@ -148,7 +193,7 @@ func (s *Service) DeleteMultipleObjects(ctx context.Context, bucketName string, 
 		}
 	}()
 
-	for rErr := range s.MinioClient.RemoveObjects(ctx, bucketName, objectInfoCh, removeObjectsOptions) {
+	for rErr := range client.RemoveObjects(ctx, bucketName, objectInfoCh, removeObjectsOptions) {
 		if rErr.Err != nil {
 			return rErr.Err
 		}
