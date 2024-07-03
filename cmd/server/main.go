@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Adi-ty/go-minio/internal/minio"
+	"github.com/Adi-ty/go-minio/internal/storage"
 	transportHttp "github.com/Adi-ty/go-minio/internal/transport/http"
 )
 
 func Run() error {
 	fmt.Println("Starting up our application")
 
-	minioService := minio.NewService()
+	storageService := storage.NewService()
 
-	httpHandler := transportHttp.NewHandler(minioService)
+	httpHandler := transportHttp.NewHandler(storageService)
 	if err := httpHandler.Serve(); err != nil {
 		return err
 	}
@@ -27,4 +27,3 @@ func main() {
 		log.Fatalf("Error starting the application: %v", err)
 	}
 }
-

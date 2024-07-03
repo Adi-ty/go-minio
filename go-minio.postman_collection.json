@@ -1,0 +1,283 @@
+{
+	"info": {
+		"_postman_id": "890dcc1b-599b-47f5-8302-a928b5db9783",
+		"name": "go-minio",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "36590141"
+	},
+	"item": [
+		{
+			"name": "Get Object",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"bucket_name\": \"carplbucket\",\n  \"object_name\": \"la.txt\",\n  \"file_path\": \"../xyz/xyz.txt\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/get",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"get"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Remove Object",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"object_name\": \"la.txt\",\n  \"bucket_name\": \"carplbucket\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/delete",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"delete"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Put Object",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"bucket_name\": \"carplbucket\",\n  \"object_name\": \"la.txt\",\n  \"file_path\": \"./na.txt\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/upload",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"upload"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Rename Object",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"bucket_name\": \"carplbucket\",\n  \"old_object_name\": \"hi.txt\",\n  \"new_object_name\": \"text.txt\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/rename",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"rename"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Check Object Exists",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"object_name\": \"abc.txt\",\n  \"bucket_name\": \"carplbucket\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/check",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"check"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Put Objects",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"bucket_name\": \"carplbucket\",\n  \"file_paths\": {\n    \"a.txt\": \"./ka.txt\",\n    \"root.html\": \"./index.html\"\n  }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/upload/multiple",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"upload",
+						"multiple"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Objects",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"bucket_name\": \"carplbucket\",\n  \"file_paths\": {\n    \"abc.txt\": \"./abc.txt\",\n    \"index.html\": \"./index.html\"\n  }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/get/multiple",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"get",
+						"multiple"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Remove Objects",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"bucket_name\": \"carplbucket\",\n  \"object_names\": [\n    \"ka.txt\",\n    \"root.html\"\n  ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/delete/multiple",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"delete",
+						"multiple"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "put presigned url",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"bucket_name\": \"carplbucket\",\r\n    \"object_name\": \"hello.txt\",\r\n    \"expiry\": 3600\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/url",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"url"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
